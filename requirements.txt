@@ -1,4 +1,5 @@
-pip install streamlit deepface opencv-python pandas
-
-# python -m streamlit run app.py
-
+streamlit
+opencv-python-headless
+pandas
+numpy
+deepface
