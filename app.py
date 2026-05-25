@@ -12,7 +12,7 @@ from facial_emotion_estimator import estimate_emotions_ai
 from utils_cdl import generate_cdl_xml, RAVDESS_BASE, apply_cdl_to_frame, lerp_tuple
 
 st.set_page_config(page_title="AuraGrade Prototype 17.5", layout="wide")
-st.title("🎬 AuraGrade Prototype 17.5: Custom ASC CDL Suite")
+st.title("🎬 AuraGrade Prototype 25.5: Custom ASC CDL Suite")
 
 # Initialize and lock default data caches inside the Session Engine
 if 'templates' not in st.session_state:
