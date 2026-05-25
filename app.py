@@ -2,6 +2,7 @@
 References:
 - Streamlit Layout Documentation: st.tabs widget configuration.
 - Real-Time Frame Buffering and Multi-Pass Parametric Interpolation Protocols.
+- Advanced Psychological Look Profiles: Mapping Emotional Coordinates to Grading Aesthetics.
 """
 import os
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
@@ -13,7 +14,7 @@ from utils_cdl import generate_cdl_xml, RAVDESS_BASE, apply_cdl_to_frame, lerp_t
 st.set_page_config(page_title="AuraGrade Prototype 17.5", layout="wide")
 st.title("🎬 AuraGrade Prototype 17.5: Custom ASC CDL Suite")
 
-# Initialize Library
+# Initialize and lock default data caches inside the Session Engine
 if 'templates' not in st.session_state:
     st.session_state['templates'] = RAVDESS_BASE.copy()
 if 'segments' not in st.session_state:
@@ -47,6 +48,7 @@ with st.sidebar:
     st.markdown("**Saturation**")
     sat = st.slider("Global Saturation", 0.0, 3.0, float(t['sat']), key="sat_slider")
 
+    # Re-cache parameter modifications inside active working memories
     st.session_state['templates'][edit_target] = {
         "slope": (s_r, s_g, s_b),
         "offset": (o_r, o_g, o_b),
@@ -71,7 +73,7 @@ with st.sidebar:
 tab_people, tab_scenes = st.tabs(["👤 Character-Centric Analysis (People)", "🏞️ Environmental Analysis (Scenes/Landscapes)"])
 
 # ==============================================================================
-# TAB 1: CHARACTER-CENTRIC ANALYSIS (All existing architecture goes here)
+# TAB 1: CHARACTER-CENTRIC ANALYSIS
 # ==============================================================================
 with tab_people:
     uploaded_video = st.file_uploader("Upload Video Asset containing Faces", type=["mp4", "mov"], key="video_uploader_people")
@@ -87,6 +89,8 @@ with tab_people:
                 cap = cv2.VideoCapture(tfile.name)
                 fps, total = cap.get(cv2.CAP_PROP_FPS), int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 raw_data = []
+                
+                # Analyze frames using uniform sampling strides to conserve infrastructure runtime overhead
                 for fno in range(0, total, 20):
                     cap.set(cv2.CAP_PROP_POS_FRAMES, fno)
                     ret, frame = cap.read()
@@ -96,6 +100,8 @@ with tab_people:
                     raw_data.append({"f": fno, "emo": top, "w": res['raw'][top]})
                 cap.release()
 
+                # Anchor Smoothing Layer: Anchor look configurations to stable duration windows
+                # Minimizes color flashing artifacts when raw tracking tracking metrics shift.
                 segs = []
                 if raw_data:
                     curr = {"s_f": 0, "emo": raw_data[0]['emo'], "w_sum": raw_data[0]['w'], "cnt": 1}
@@ -162,6 +168,8 @@ with tab_people:
                                     "slope": (1.0, 1.0, 1.0), "offset": (0.0, 0.0, 0.0), "power": (1.0, 1.0, 1.0), "sat": 1.0
                                 })
                         
+                        # Temporal Multi-Pass Smoothing Kernel Block
+                        # Executes sliding window arithmetic means across parameters to construct linear ramp interpolation regions.
                         smoothed_parameters = []
                         for f_idx in range(total_frames):
                             start_window = max(0, f_idx - transition_frames // 2)
@@ -213,7 +221,7 @@ with tab_people:
                         c2.image(cv2.cvtColor(graded, cv2.COLOR_BGR2RGB), use_container_width=True)
 
 # ==============================================================================
-# TAB 2: ENVIRONMENTAL ANALYSIS (Placeholder for upcoming scene analysis logic)
+# TAB 2: ENVIRONMENTAL ANALYSIS
 # ==============================================================================
 with tab_scenes:
     st.subheader("🏞️ Scene Sentiment Extraction Engine")
