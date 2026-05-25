@@ -15,30 +15,33 @@ def lerp_tuple(t1, t2, alpha):
 
 def apply_cdl_to_frame(frame, exact_cdl):
     """
-    Applies the standardized ASC CDL primary color grading transform matrix.
-    Formula: out = clamp(in * slope + offset)^power
-    Followed by Rec. 709 Luminance-preserving Saturation matrix.
+    Optimized ASC CDL transformation utilizing a Linear-Light pipeline.
     """
-    img = frame.astype(np.float32) / 255.0
+    # 1. Normalize and convert from non-linear Gamma to Linear Space
+    img = (frame.astype(np.float32) / 255.0) ** 2.2
     
     s = exact_cdl['slope']
     o = exact_cdl['offset']
     p = exact_cdl['power']
     sat = exact_cdl['sat']
 
-    # OpenCV frames are in BGR order (0=B, 1=G, 2=R)
+    # 2. Process channels with safe clipping constraints (OpenCV uses BGR)
+    # Channel mappings: s[0]=R, s[1]=G, s[2]=B
     img[:,:,2] = np.power(np.maximum((img[:,:,2] * s[0]) + o[0], 0.0), p[0]) # Red
     img[:,:,1] = np.power(np.maximum((img[:,:,1] * s[1]) + o[1], 0.0), p[1]) # Green
     img[:,:,0] = np.power(np.maximum((img[:,:,0] * s[2]) + o[2], 0.0), p[2]) # Blue
     
-    # Rec. 709 standard luma conversion values 
+    # 3. Rec. 709 standard luma conversion values 
     luma = 0.2126 * img[:,:,2] + 0.7152 * img[:,:,1] + 0.0722 * img[:,:,0]
     luma = np.expand_dims(luma, axis=-1)
     
-    # Apply standard SatNode transformation matrix
+    # 4. Apply Saturation matrix
     img = luma + sat * (img - luma)
     
-    return np.clip(img * 255.0, 0, 255).astype(np.uint8)
+    # 5. Clamp values, convert back to Gamma Space (1/2.2), and map to uint8
+    img = np.clip(img, 0.0, 1.0) ** (1.0 / 2.2)
+    
+    return (img * 255.0).astype(np.uint8)
 
 def generate_cdl_xml(segments):
     root = ET.Element("ColorDecisionList", xmlns="urn:ASC:CDL:v1.01")
