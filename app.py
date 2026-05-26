@@ -12,7 +12,7 @@ from facial_emotion_estimator import estimate_emotions_ai
 from utils_cdl import generate_cdl_xml, RAVDESS_BASE, apply_cdl_to_frame, lerp_tuple
 
 st.set_page_config(page_title="AuraGrade Prototype 17.5", layout="wide")
-st.title("🎬 AuraGrade Prototype 17.5: Custom ASC CDL Suite")
+st.title("🎬 AuraGrade Prototype 25.5: Custom ASC CDL Suite")
 
 # Initialize Library
 if 'templates' not in st.session_state:
@@ -230,8 +230,12 @@ with tab_scenes:
             st.video(tfile_scene.name)
             if st.button("Step 1: Analyze Motion Pacing", type="primary", key="btn_analysis_scenes"):
                 cap = cv2.VideoCapture(tfile_scene.name)
-                fps = cap.get(cv2.CAP_PROP_FPS)
+                fps = float(cap.get(cv2.CAP_PROP_FPS))
                 total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                
+                # Dynamic fallback for invalid or missing frame rate readings
+                if fps <= 0:
+                    fps = 24.0
                 
                 raw_scene_data = []
                 prev_gray = None
@@ -250,12 +254,12 @@ with tab_scenes:
                         magnitude, _ = cv2.cartToPolar(flow[..., 0], flow[..., 1])
                         motion_speed = float(np.mean(magnitude))
                         
-                        # Operational Rule: High pacing threshold assignments mapping to existing RAVDESS template labels
+                        # Operational Rule: High pacing threshold assignments mapping to existing template labels
                         assigned_mood = "surprise" if motion_speed > 1.2 else "calm"
-                        raw_scene_data.append({"f": fno, "emo": assigned_mood, "w": min(motion_speed / 3.0, 1.0)})
+                        raw_scene_data.append({"f": int(fno), "emo": assigned_mood, "w": float(min(motion_speed / 3.0, 1.0))})
                     else:
                         # Baseline starter frame fallbacks
-                        raw_scene_data.append({"f": fno, "emo": "calm", "w": 0.5})
+                        raw_scene_data.append({"f": int(fno), "emo": "calm", "w": 0.5})
                         
                     prev_gray = gray.copy()
                 cap.release()
@@ -264,19 +268,33 @@ with tab_scenes:
                 sc_segs = []
                 if raw_scene_data:
                     curr = {"s_f": 0, "emo": raw_scene_data[0]['emo'], "w_sum": raw_scene_data[0]['w'], "cnt": 1}
+                    
+                    # Safe localized helper for frame-to-timestamp calculation
+                    def format_time(frame_num, frame_rate):
+                        total_seconds = int(frame_num / frame_rate)
+                        hours = total_seconds // 3600
+                        minutes = (total_seconds % 3600) // 60
+                        seconds = total_seconds % 60
+                        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
                     for i in range(1, len(raw_scene_data)):
                         if raw_scene_data[i]['emo'] != curr['emo']:
                             end_f = raw_scene_data[i]['f']
                             sc_segs.append({
-                                "start": str(pd.to_timedelta(curr['s_f']/fps, unit='s'))[7:15],
-                                "end": str(pd.to_timedelta(end_f/fps, unit='s'))[7:15],
-                                "s_f": curr['s_f'], "e_f": end_f, "emotion": curr['emo'], "weight": curr['w_sum']/curr['cnt']
+                                "start": format_time(curr['s_f'], fps),
+                                "end": format_time(end_f, fps),
+                                "s_f": int(curr['s_f']), "e_f": int(end_f), "emotion": curr['emo'], "weight": float(curr['w_sum']/curr['cnt'])
                             })
                             curr = {"s_f": end_f, "emo": raw_scene_data[i]['emo'], "w_sum": raw_scene_data[i]['w'], "cnt": 1}
                         else:
                             curr['w_sum'] += raw_scene_data[i]['w']; curr['cnt'] += 1
-                    sc_segs.append({"start": str(pd.to_timedelta(curr['s_f']/fps, unit='s'))[7:15], "end": str(pd.to_timedelta(total/fps, unit='s'))[7:15],
-                                 "s_f": curr['s_f'], "e_f": total, "emotion": curr['emo'], "weight": curr['w_sum']/curr['cnt']})
+                            
+                    sc_segs.append({
+                        "start": format_time(curr['s_f'], fps), 
+                        "end": format_time(total, fps),
+                        "s_f": int(curr['s_f']), "e_f": int(total), "emotion": curr['emo'], "weight": float(curr['w_sum']/curr['cnt'])
+                    })
+                    
                     st.session_state['scene_segments'] = sc_segs
                     st.session_state['scene_fps'] = fps
 
