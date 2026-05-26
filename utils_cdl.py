@@ -95,3 +95,14 @@ RAVDESS_BASE = {
     "disgust":  {"slope": (0.88, 1.22, 0.78), "offset": (-0.02, 0.05, -0.03), "power": (1.05, 0.90, 1.15), "sat": 0.90},
     "surprise": {"slope": (1.25, 1.25, 1.10), "offset": (0.0, 0.0, 0.0), "power": (0.85, 0.85, 0.90), "sat": 1.50}
 }
+
+# Standardized Environmental Mood Look Profiles for Tab 2
+# Designed around classic cinematography genre palettes
+SCENE_MOOD_BASE = {
+    "vibrant_pop":   {"slope": (1.15, 1.08, 0.92), "offset": (0.01, 0.0, -0.01), "power": (0.95, 0.98, 1.02), "sat": 1.40},
+    "melancholic":   {"slope": (0.85, 0.90, 1.05), "offset": (-0.03, -0.01, 0.04), "power": (1.12, 1.08, 0.98), "sat": 0.50},
+    "thriller_grit": {"slope": (1.20, 1.10, 0.80), "offset": (0.04, -0.02, -0.05), "power": (1.20, 0.95, 0.85), "sat": 0.85},
+    "epic_scenic":   {"slope": (1.05, 1.05, 1.10), "offset": (0.0, 0.0, 0.01), "power": (0.90, 0.92, 0.95), "sat": 1.20},
+    "suspense":      {"slope": (0.90, 1.05, 0.90), "offset": (-0.02, 0.03, -0.02), "power": (1.30, 1.15, 1.25), "sat": 0.65},
+    "neutral":       {"slope": (1.0, 1.0, 1.0), "offset": (0.0, 0.0, 0.0), "power": (1.0, 1.0, 1.0), "sat": 1.0}
+}
